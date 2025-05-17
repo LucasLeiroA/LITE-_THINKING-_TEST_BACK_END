@@ -1,3 +1,4 @@
+// scripts/setup.js
 const { exec } = require('child_process');
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
@@ -6,9 +7,7 @@ const prisma = new PrismaClient();
 
 async function runMigrations() {
   return new Promise((resolve, reject) => {
-    const migrateCommand = 'node ./node_modules/prisma/build/index.js migrate deploy';
-
-    exec(migrateCommand, (error, stdout, stderr) => {
+    exec('npx prisma migrate deploy', (error, stdout, stderr) => {
       if (error) {
         console.error('[❌ Migraciones] Error:', error.message);
         return reject(error);
@@ -43,25 +42,18 @@ async function seedUsers() {
   }
 }
 
-const { spawn } = require('child_process');
-
 async function start() {
   try {
     await runMigrations();
     await seedUsers();
     await prisma.$disconnect();
 
-    const server = spawn('npx', ['nodemon', 'index.js'], { stdio: 'inherit', shell: true });
-
-    server.on('error', (err) => {
-      console.error('❌ Error al iniciar nodemon:', err.message);
-    });
-
+    // Inicia el servidor Express
+    require('../index.js');
   } catch (err) {
     console.error('❌ Error en setup total:', err.message);
     process.exit(1);
   }
 }
-
 
 start();
